@@ -173,14 +173,12 @@ contract FundTransferHook is BaseACPHook {
     // Internal helpers
     // -------------------------------------------------------------------------
 
-    function _getJobProviderAndStatus(uint256 jobId) internal view returns (address provider, uint8 status) {
+    function _getJobProviderAndStatus(uint256 jobId) internal view returns (address, uint8) {
         (bool ok, bytes memory data) = acpContract.staticcall(
             abi.encodeWithSignature("getJob(uint256)", jobId)
         );
         require(ok, "getJob failed");
-        // Job struct: (id, client, provider, evaluator, hook, description, budget, expiredAt, status)
-        (,, provider,,,,,, status) = abi.decode(
-            data, (uint256, address, address, address, address, string, uint256, uint256, uint8)
-        );
+        ACPJob memory job = abi.decode(data, (ACPJob));
+        return (job.provider, job.status);
     }
 }

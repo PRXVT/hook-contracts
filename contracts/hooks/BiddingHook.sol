@@ -121,14 +121,12 @@ contract BiddingHook is BaseACPHook {
 
     // --- Helper --------------------------------------------------------------
 
-    function _getJobBudget(uint256 jobId) internal view returns (uint256 budget) {
+    function _getJobBudget(uint256 jobId) internal view returns (uint256) {
         (bool ok, bytes memory data) = acpContract.staticcall(
             abi.encodeWithSignature("getJob(uint256)", jobId)
         );
         require(ok, "getJob failed");
-        // Job struct: (id, client, provider, evaluator, hook, description, budget, expiredAt, status)
-        (,,,,,, budget,,) = abi.decode(
-            data, (uint256, address, address, address, address, string, uint256, uint256, uint8)
-        );
+        ACPJob memory job = abi.decode(data, (ACPJob));
+        return job.budget;
     }
 }

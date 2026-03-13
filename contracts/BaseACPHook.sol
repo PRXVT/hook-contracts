@@ -3,6 +3,21 @@ pragma solidity ^0.8.20;
 
 import "./IACPHook.sol";
 
+/// @dev Local mirror of AgenticCommerceHooked.Job for ABI-decoding getJob() return data.
+///      getJob returns a struct (dynamic tuple because of `string`), so abi.decode must
+///      use a matching struct type — flat-tuple decoding skips the offset wrapper and reverts.
+struct ACPJob {
+    uint256 id;
+    address client;
+    address provider;
+    address evaluator;
+    address hook;
+    string description;
+    uint256 budget;
+    uint256 expiredAt;
+    uint8 status;
+}
+
 /**
  * @title BaseACPHook
  * @dev Abstract convenience base for ACP hooks. Routes the generic
@@ -46,7 +61,7 @@ abstract contract BaseACPHook is IACPHook {
     // These match AgenticCommerceHooked function selectors.
     bytes4 private constant SEL_SET_PROVIDER = bytes4(keccak256("setProvider(uint256,address,bytes)"));
     bytes4 private constant SEL_SET_BUDGET   = bytes4(keccak256("setBudget(uint256,uint256,bytes)"));
-    bytes4 private constant SEL_FUND         = bytes4(keccak256("fund(uint256,bytes)"));
+    bytes4 private constant SEL_FUND         = bytes4(keccak256("fund(uint256,uint256,bytes)"));
     bytes4 private constant SEL_SUBMIT       = bytes4(keccak256("submit(uint256,bytes32,bytes)"));
     bytes4 private constant SEL_COMPLETE     = bytes4(keccak256("complete(uint256,bytes32,bytes)"));
     bytes4 private constant SEL_REJECT       = bytes4(keccak256("reject(uint256,bytes32,bytes)"));
@@ -117,14 +132,12 @@ abstract contract BaseACPHook is IACPHook {
 
     // --- Helper: read job from ACP contract ----------------------------------
 
-    function _getJobClient(uint256 jobId) internal view returns (address client) {
+    function _getJobClient(uint256 jobId) internal view returns (address) {
         (bool ok, bytes memory data) = acpContract.staticcall(
             abi.encodeWithSignature("getJob(uint256)", jobId)
         );
         require(ok, "getJob failed");
-        // Job struct: (id, client, provider, evaluator, hook, description, budget, expiredAt, status)
-        (, client,,,,,,, ) = abi.decode(
-            data, (uint256, address, address, address, address, string, uint256, uint256, uint8)
-        );
+        ACPJob memory job = abi.decode(data, (ACPJob));
+        return job.client;
     }
 }
