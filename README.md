@@ -20,6 +20,7 @@
 |----------|---------|-------------|
 | [BiddingHook.sol](./contracts/hooks/BiddingHook.sol) | A — Simple Policy | Off-chain signed bidding for provider selection. Providers sign bid commitments; the hook verifies the winning signature on-chain via `setProvider`. Zero direct external calls — everything flows through core → hook callbacks. |
 | [FundTransferHook.sol](./contracts/hooks/FundTransferHook.sol) | B — Advanced Escrow | Two-phase fund transfer for token conversion/bridging jobs. Client capital flows to provider at `fund`; provider deposits output tokens at `submit`; buyer receives them at `complete`. |
+| [PrivacyHook.sol](./contracts/hooks/PrivacyHook.sol) | C — Experimental | Privacy-preserving submissions. Deliverables are encrypted off-chain with AES-256-GCM; AES keys are ECDH-wrapped per recipient (client + evaluator). The hook enforces envelope structure on-chain — plaintext submissions revert. Optional ZK proof verification for trustless constraints on encrypted data. |
 
 ## Building a Hook
 
