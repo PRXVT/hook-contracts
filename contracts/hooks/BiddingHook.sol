@@ -3,8 +3,9 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/utils/cryptography/ECDSA.sol";
 import "@openzeppelin/contracts/utils/cryptography/MessageHashUtils.sol";
-import "../BaseACPHook.sol";
-import "@acp/AgenticCommerce.sol";
+import "../BaseERC8183Hook.sol";
+import "../interfaces/IERC8183HookMetadata.sol";
+import "@erc8183/AgenticCommerce.sol";
 
 /**
  * @title BiddingHook
@@ -46,7 +47,7 @@ import "@acp/AgenticCommerce.sol";
  * KEY PROPERTY: Zero direct external calls to the hook. Everything flows
  * through core contract -> hook callbacks.
  */
-contract BiddingHook is BaseACPHook {
+contract BiddingHook is BaseERC8183Hook, IERC8183HookMetadata {
     using ECDSA for bytes32;
     using MessageHashUtils for bytes32;
 
@@ -64,7 +65,7 @@ contract BiddingHook is BaseACPHook {
     error BudgetMismatch();
     error ProviderNotSet();
 
-    constructor(address acpContract_) BaseACPHook(acpContract_) {}
+    constructor(address erc8183Contract_) BaseERC8183Hook(erc8183Contract_) {}
 
     // --- Hook callbacks only (no direct external functions) ---
 
@@ -118,6 +119,20 @@ contract BiddingHook is BaseACPHook {
 
     /// @dev Typed accessor for the core contract
     function _core() internal view returns (AgenticCommerce) {
-        return AgenticCommerce(acpContract);
+        return AgenticCommerce(erc8183Contract);
+    }
+
+    // --- IERC8183HookMetadata ------------------------------------------------
+
+    function requiredSelectors() external pure returns (bytes4[] memory) {
+        return new bytes4[](0);
+    }
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view override returns (bool) {
+        return
+            interfaceId == type(IERC8183HookMetadata).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 }

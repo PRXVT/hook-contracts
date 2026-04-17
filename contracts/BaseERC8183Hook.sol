@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: MIT
 pragma solidity ^0.8.20;
 
-import "@erc8183/IACPHook.sol";
+import "@erc8183/IERC8183Hook.sol";
 import "@erc8183/AgenticCommerce.sol";
 import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
 
@@ -12,7 +12,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
  *      developers only override what they need.
  *
  *      NOT part of the ERC standard — this is a helper contract that can be
- *      updated independently without changing the IACPHook interface.
+ *      updated independently without changing the IERC8183Hook interface.
  *
  *      All virtual functions include an `address caller` parameter because
  *      AgenticCommerce supports operators, so the actual caller matters.
@@ -32,7 +32,7 @@ import "@openzeppelin/contracts/utils/introspection/ERC165.sol";
  *              }
  *          }
  */
-abstract contract BaseERC8183Hook is ERC165, IACPHook {
+abstract contract BaseERC8183Hook is ERC165, IERC8183Hook {
     /// @notice The ERC-8183 core contract (or MultiHookRouter) that is authorized to call this hook
     address public immutable erc8183Contract;
 
@@ -59,7 +59,7 @@ abstract contract BaseERC8183Hook is ERC165, IACPHook {
         bytes4 interfaceId
     ) public view virtual override(ERC165, IERC165) returns (bool) {
         return
-            interfaceId == type(IACPHook).interfaceId ||
+            interfaceId == type(IERC8183Hook).interfaceId ||
             super.supportsInterface(interfaceId);
     }
 
@@ -76,7 +76,7 @@ abstract contract BaseERC8183Hook is ERC165, IACPHook {
     bytes4 private constant SEL_REJECT =
         bytes4(keccak256("reject(uint256,bytes32,bytes)"));
 
-    // --- IACPHook implementation (router) ------------------------------------
+    // --- IERC8183Hook implementation (router) ------------------------------------
 
     function beforeAction(
         uint256 jobId,

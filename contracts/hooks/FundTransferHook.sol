@@ -3,8 +3,9 @@ pragma solidity ^0.8.20;
 
 import "@openzeppelin/contracts/token/ERC20/IERC20.sol";
 import "@openzeppelin/contracts/token/ERC20/utils/SafeERC20.sol";
-import "../BaseACPHook.sol";
-import "@acp/AgenticCommerce.sol";
+import "../BaseERC8183Hook.sol";
+import "../interfaces/IERC8183HookMetadata.sol";
+import "@erc8183/AgenticCommerce.sol";
 
 /**
  * @title FundTransferHook
@@ -54,7 +55,7 @@ import "@acp/AgenticCommerce.sol";
  * KEY PROPERTY: The provider cannot submit without depositing the output tokens,
  * and the buyer only receives tokens when the evaluator completes the job.
  */
-contract FundTransferHook is BaseACPHook {
+contract FundTransferHook is BaseERC8183Hook, IERC8183HookMetadata {
     using SafeERC20 for IERC20;
 
     struct TransferCommitment {
@@ -76,14 +77,14 @@ contract FundTransferHook is BaseACPHook {
     error NothingToRecover();
     error JobNotExpired();
 
-    constructor(address token_, address acpContract_) BaseACPHook(acpContract_) {
+    constructor(address token_, address erc8183Contract_) BaseERC8183Hook(erc8183Contract_) {
         if (token_ == address(0)) revert ZeroAddress();
         token = IERC20(token_);
     }
 
     /// @dev Typed accessor for the core contract
     function _core() internal view returns (AgenticCommerce) {
-        return AgenticCommerce(acpContract);
+        return AgenticCommerce(erc8183Contract);
     }
 
     // -------------------------------------------------------------------------
@@ -171,5 +172,21 @@ contract FundTransferHook is BaseACPHook {
     function getCommitment(uint256 jobId) external view returns (address buyer, uint256 transferAmount, bool providerDeposited) {
         TransferCommitment memory c = commitments[jobId];
         return (c.buyer, c.transferAmount, c.providerDeposited);
+    }
+
+    // -------------------------------------------------------------------------
+    // IERC8183HookMetadata
+    // -------------------------------------------------------------------------
+
+    function requiredSelectors() external pure returns (bytes4[] memory) {
+        return new bytes4[](0);
+    }
+
+    function supportsInterface(
+        bytes4 interfaceId
+    ) public view override returns (bool) {
+        return
+            interfaceId == type(IERC8183HookMetadata).interfaceId ||
+            super.supportsInterface(interfaceId);
     }
 }
