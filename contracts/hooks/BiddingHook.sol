@@ -63,6 +63,7 @@ contract BiddingHook is BaseACPHook {
     error NoBidDeadline();
     error BudgetMismatch();
     error ProviderNotSet();
+    error ZeroBidAmount();
 
     constructor(address acpContract_) BaseACPHook(acpContract_) {}
 
@@ -93,6 +94,11 @@ contract BiddingHook is BaseACPHook {
 
         // Mode 2: verify signed bid and store committedAmount
         if (block.timestamp < b.deadline) revert BiddingStillOpen();
+        // committedAmount == 0 doubles as the "no bidding committed yet" sentinel
+        // (see Mode 3 gate above and _preFund). Storing a zero bid would never
+        // advance state out of Mode 2 and would silently bypass _preFund's
+        // budget enforcement, so reject it here.
+        if (amount == 0) revert ZeroBidAmount();
 
         address provider = _core().getJob(jobId).provider;
         if (provider == address(0)) revert ProviderNotSet();
