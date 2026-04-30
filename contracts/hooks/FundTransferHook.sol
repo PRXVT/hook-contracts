@@ -75,6 +75,7 @@ contract FundTransferHook is BaseACPHook {
     error AlreadyDeposited();
     error NothingToRecover();
     error JobNotExpired();
+    error TransferAmountMismatch();
 
     constructor(address token_, address acpContract_) BaseACPHook(acpContract_) {
         if (token_ == address(0)) revert ZeroAddress();
@@ -133,7 +134,16 @@ contract FundTransferHook is BaseACPHook {
         if (c.providerDeposited) revert AlreadyDeposited();
         AgenticCommerce.Job memory job = _core().getJob(jobId);
         c.providerDeposited = true;
+        // Verify the hook actually received the full committed amount. Fee-on-
+        // transfer or rebasing tokens leave the hook short of c.transferAmount,
+        // which later causes _postComplete (and the recovery paths) to revert
+        // or to drain pooled balance from other commitments. Reject the deposit
+        // explicitly rather than silently entering that broken state.
+        uint256 balanceBefore = token.balanceOf(address(this));
         token.safeTransferFrom(job.provider, address(this), c.transferAmount);
+        if (token.balanceOf(address(this)) - balanceBefore != c.transferAmount) {
+            revert TransferAmountMismatch();
+        }
     }
 
     /// @dev Release escrowed tokens to buyer after evaluator completes the job.
