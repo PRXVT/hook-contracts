@@ -192,6 +192,9 @@ contract MultiHookRouter is ERC165, IERC8183Hook, ReentrancyGuardTransient, Owna
     /// @param jobId The job ID
     /// @param selector The hookable function selector
     /// @param hook The sub-hook address to remove
+    /// @dev Preserves the relative order of the remaining hooks. Order matters
+    ///      because beforeAction/afterAction iterate _jobHooks in storage order
+    ///      and _splitHookData binds per-hook optParams to hooks by index.
     function removeHook(
         uint256 jobId,
         bytes4 selector,
@@ -202,7 +205,11 @@ contract MultiHookRouter is ERC165, IERC8183Hook, ReentrancyGuardTransient, Owna
 
         for (uint256 i; i < len; ) {
             if (hooks[i] == hook) {
-                hooks[i] = hooks[len - 1];
+                // Shift remaining elements left so removal is order-preserving.
+                for (uint256 j = i; j + 1 < len; ) {
+                    hooks[j] = hooks[j + 1];
+                    unchecked { ++j; }
+                }
                 hooks.pop();
                 emit HookRemoved(jobId, selector, hook);
                 return;
