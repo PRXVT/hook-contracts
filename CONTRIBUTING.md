@@ -26,6 +26,9 @@ Hard requirements for hook contents:
 ### 1. Inherit `BaseERC8183Hook` and `IERC8183HookMetadata`
 
 ```solidity
+import {BaseERC8183Hook} from "../BaseERC8183Hook.sol";
+import {IERC8183HookMetadata} from "../interfaces/IERC8183HookMetadata.sol";
+
 contract YourHook is BaseERC8183Hook, IERC8183HookMetadata {
     constructor(address erc8183Contract_) BaseERC8183Hook(erc8183Contract_) {}
 
@@ -109,6 +112,7 @@ See `BiddingHook.sol` or `FundTransferHook.sol` for examples.
 ## Code style
 
 - Solidity `^0.8.20`. Every file begins with `// SPDX-License-Identifier: MIT`.
+- Use named imports — `import {Symbol} from "path"` — never whole-file `import "path"`.
 - Follow the style of existing contracts (named errors, NatSpec, no magic numbers).
 - Keep hooks focused — one responsibility per hook.
 - Avoid unnecessary state; prefer `mapping(uint256 => ...)` keyed by `jobId`.
